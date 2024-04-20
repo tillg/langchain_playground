@@ -23,8 +23,7 @@ from langchain_core.callbacks import FileCallbackHandler
 from loguru import logger
 
 
-EMBEDDING_MODEL = "nomic-embed-text"
-VECTORESTORE_NAME = "a12"
+VECTORESTORE_NAME = "a12_small"
 
 log_dir = 'data/logs'
 log_file = f'{log_dir}/app.log'
@@ -37,7 +36,7 @@ config = {
     'callbacks': [handler]
 }
 
-retriever = get_retriever(vectorstore=get_vectorestore(VECTORESTORE_NAME, embedding_model=EMBEDDING_MODEL))
+retriever = get_retriever(VECTORESTORE_NAME)
 prompt = hub.pull("rlm/rag-prompt")
 llm = ChatOllama(model="mixtral:8x7b-instruct-v0.1-q8_0")
 

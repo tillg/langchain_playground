@@ -20,7 +20,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import HumanMessage
 import os
 from tqdm import tqdm
-
+import yaml
 
 log_dir = 'data/logs'
 log_file = f'{log_dir}/app.log'
@@ -28,9 +28,11 @@ os.makedirs(log_dir, exist_ok=True)
 logger.remove()
 logger.add(log_file, colorize=True, enqueue=True)
 
+VECTORESTORES_YAML = "data/vectorestores.yaml"
+
 DEFAULT_NAME = "default_vectore_store"
 VECTORE_STORE_DIR = "data/vectorestores"
-DEFAULT_EMBEDDING_MODEL = None
+DEFAULT_EMBEDDING_MODEL =  "nomic-embed-text"
 
 
 class ChromaPimped(Chroma):
@@ -69,8 +71,45 @@ class ChromaPimped(Chroma):
             self.delete(all_docs['ids'])
         logger.info(f"Deleting all documents from vectorstore...Done")
 
-def get_vectorestore(name=DEFAULT_NAME, embedding_model=None):
-    persist_directory = os.path.join(VECTORE_STORE_DIR, name)
+def load_vectorestore_configs():
+    with open(VECTORESTORES_YAML, 'r') as file:
+        vectorestores_config = yaml.safe_load(file)
+    return vectorestores_config
+
+def save_vectorestore_configs(vectorestores_config):
+    with open(VECTORESTORES_YAML, 'w') as file:
+        yaml.safe_dump(vectorestores_config, file)
+
+logger.info(f"Available vectorestores configurations: {
+            load_vectorestore_configs().keys()}")
+
+def get_vectorestore_config(name):
+    vectorestores_configs = load_vectorestore_configs()
+    if name in vectorestores_configs.keys():
+        return vectorestores_configs[name]
+    return None
+
+def get_vectorestore(name=DEFAULT_NAME):
+    vectorestores_config = load_vectorestore_configs()
+    if name in vectorestores_config.keys():
+        embedding_model = vectorestores_config[name].get(
+            "embedding_model", DEFAULT_EMBEDDING_MODEL)
+        vectorestore_directory = vectorestores_config[name].get(
+            "vectorestore_directory", f"{VECTORE_STORE_DIR}/{name}")
+        ingest_directory = vectorestores_config[name].get(
+            "ingest_directory", None)
+    else:
+        embedding_model = DEFAULT_EMBEDDING_MODEL
+        vectorestore_directory = f"{VECTORE_STORE_DIR}/{name}"
+        ingest_directory = None
+
+    # Write back the updated config
+    vectorestores_config[name] = {
+        "embedding_model": embedding_model,
+        "vectorestore_directory": vectorestore_directory,
+        "ingest_directory": ingest_directory
+    }
+    save_vectorestore_configs(vectorestores_config)
     logger.info(f"Getting vectorstore for {
                 name} with embedding model {embedding_model}...")
     ollama_emb = OllamaEmbeddings()
@@ -78,14 +117,13 @@ def get_vectorestore(name=DEFAULT_NAME, embedding_model=None):
         ollama_emb = OllamaEmbeddings(
             model=embedding_model)  # For ex. llama2:latest
     vectorstore = ChromaPimped(
-        DEFAULT_NAME, ollama_emb, persist_directory=persist_directory)
+        DEFAULT_NAME, ollama_emb, persist_directory=vectorestore_directory)
     logger.info(f"Getting vectorstore for {name} with embedding model {embedding_model}...Done. No of docs: {len(vectorstore)}")
     return vectorstore
 
 
-def get_retriever(*, name=DEFAULT_NAME, vectorstore=None):
-    if vectorstore is None:
-        vectorstore = get_vectorestore(name)
+def get_retriever(name=DEFAULT_NAME):
+    vectorstore = get_vectorestore(name)
     retriever = vectorstore.as_retriever(
         search_type="similarity", search_kwargs={"k": 6}, verbose=True)
     return retriever

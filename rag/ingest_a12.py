@@ -19,22 +19,17 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import HumanMessage
 from tqdm import tqdm
 import os
-from vectorestore_factory import get_vectorestore
-
-log_dir = 'data/logs'
-log_file = f'{log_dir}/app.log'
-os.makedirs(log_dir, exist_ok=True)
-logger.remove()
-logger.add(log_file, colorize=True, enqueue=True)
+from vectorestore_factory import get_vectorestore, get_vectorestore_config
 
 
-DIRECTORY_TO_INGEST = "data/ingest/a12_small"
-EMBEDDING_MODEL = "nomic-embed-text"
-VECTORESTORE_NAME = "a12"
+VECTORESTORE_NAME = "a12_small"
 
+vectorstore_config = get_vectorestore_config(VECTORESTORE_NAME)
+if vectorstore_config is None:
+    raise ValueError(f"Vectorstore config not found for {VECTORESTORE_NAME}")
 
 loader = DirectoryLoader(
-    DIRECTORY_TO_INGEST, glob="**/*.md", show_progress=True)
+    vectorstore_config["ingest_directory"], glob="**/*.md", show_progress=True)
 
 logger.info(f"Loading documents...")
 docs = loader.load()
@@ -47,8 +42,7 @@ all_splits = text_splitter.split_documents(docs)
 
 logger.info(f"No of splits: {len(all_splits)}")
 
-vectorstore = get_vectorestore(
-    VECTORESTORE_NAME, embedding_model=EMBEDDING_MODEL)
+vectorstore = get_vectorestore(VECTORESTORE_NAME)
 logger.info(f"Length of vectorstore before all: {
             len(vectorstore)}")
 vectorstore.delete_all_documents()
