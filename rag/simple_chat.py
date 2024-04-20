@@ -29,11 +29,9 @@ VECTORESTORE_NAME = "a12"
 log_dir = 'data/logs'
 log_file = f'{log_dir}/app.log'
 os.makedirs(log_dir, exist_ok=True)
-#logging.basicConfig(filename=log_file, level=logging.INFO)
-#logger = logging.getLogger(__name__)
 logger.remove()
 logger.add(log_file, colorize=True, enqueue=True)
-logger
+
 handler = FileCallbackHandler(log_file)
 config = {
     'callbacks': [handler]
