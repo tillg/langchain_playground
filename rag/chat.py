@@ -1,7 +1,6 @@
 import bs4
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-import logging
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.chat_models import ChatOllama
@@ -17,17 +16,25 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import HumanMessage
-from vectorestore_factory import get_retriever
+from vectorestore_factory import get_retriever, get_vectorestore
+from loguru import logger 
+import os
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+EMBEDDING_MODEL = "nomic-embed-text"
+VECTORESTORE_NAME = "a12"
 
-retriever = get_retriever()
+log_dir = 'data/logs'
+log_file = f'{log_dir}/app.log'
+os.makedirs(log_dir, exist_ok=True)
+logger.remove()
+logger.add(log_file, colorize=True, enqueue=True)
 
-retrieved_docs = retriever.invoke(
-    "What are the approaches to Task Decomposition?")
-logger.info(f"No of retrieved docs: {len(retrieved_docs)}, first doc: {
-            retrieved_docs[0].page_content}")
+retriever = get_retriever(vectorstore=get_vectorestore(VECTORESTORE_NAME, embedding_model=EMBEDDING_MODEL))
+
+# retrieved_docs = retriever.invoke(
+#     "What are the approaches to Task Decomposition?")
+# logger.info(f"No of retrieved docs: {len(retrieved_docs)}, first doc: {
+#             retrieved_docs[0].page_content}")
 
 llm = ChatOllama(model="mixtral:8x7b-instruct-v0.1-q8_0")
 
@@ -96,16 +103,23 @@ rag_chain_with_source = RunnableParallel(
 
 chat_history = []
 
-question = "What is Task Decomposition?"
-ai_msg_1 = rag_chain.invoke({"input": question, "chat_history": chat_history})
-chat_history.extend([HumanMessage(content=question), ai_msg_1["answer"]])
+# question = "What is Task Decomposition?"
+# ai_msg_1 = rag_chain.invoke({"input": question, "chat_history": chat_history})
+# chat_history.extend([HumanMessage(content=question), ai_msg_1["answer"]])
 
-second_question = "What are common ways of doing it?"
-ai_msg_2 = rag_chain.invoke(
-    {"input": second_question, "chat_history": chat_history})
+# second_question = "What are common ways of doing it?"
+# ai_msg_2 = rag_chain.invoke(
+#     {"input": second_question, "chat_history": chat_history})
 
 
-answer = ai_msg_2["answer"]
-logger.info(f"Answer: {answer}")
-logger.info("\n" + pprint.pformat(answer))
+# answer = ai_msg_2["answer"]
+# logger.info(f"Answer: {answer}")
+# logger.info("\n" + pprint.pformat(answer))
+
+
+while True:
+    user_input = input("> ")
+    ai_msg = rag_chain.invoke({"input": user_input, "chat_history": chat_history})
+    chat_history.extend([HumanMessage(content=user_input), ai_msg["answer"]])
+    print("\n Assistant :", ai_msg["answer"])
 

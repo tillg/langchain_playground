@@ -1,7 +1,6 @@
 import bs4
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-import logging
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.chat_models import ChatOllama
@@ -17,14 +16,18 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import HumanMessage
-
+from loguru import logger
+import os
 from vectorestore_factory import get_vectorestore
+
+log_dir = 'data/logs'
+log_file = f'{log_dir}/app.log'
+os.makedirs(log_dir, exist_ok=True)
+logger.remove()
+logger.add(log_file, colorize=True, enqueue=True)
 
 EMBEDDING_MODEL = "nomic-embed-text"
 VECTORESTORE_NAME = "lilianweng"
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Only keep post title, headers, and content from the full HTML.
 bs4_strainer = bs4.SoupStrainer(
