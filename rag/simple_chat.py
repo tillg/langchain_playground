@@ -16,14 +16,14 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.messages import HumanMessage
-from vectorestore_factory import get_retriever, get_vectorestore
+from rag.vectorestore_factory import get_retriever, get_vectorestore
 from langchain.globals import set_debug
 import os
 from langchain_core.callbacks import FileCallbackHandler
 from loguru import logger
+from rag.handlerToDocumentLog import HandlerToDocumentLog
 
-
-VECTORESTORE_NAME = "a12_small"
+VECTORESTORE_NAME = "a12_large_mxbai"  # "a12_small"
 
 log_dir = 'data/logs'
 log_file = f'{log_dir}/app.log'
@@ -31,7 +31,8 @@ os.makedirs(log_dir, exist_ok=True)
 logger.remove()
 logger.add(log_file, colorize=True, enqueue=True)
 
-handler = FileCallbackHandler(log_file)
+#handler = FileCallbackHandler(log_file)
+handler = HandlerToDocumentLog()
 config = {
     'callbacks': [handler]
 }
@@ -43,9 +44,8 @@ llm = ChatOllama(model="mixtral:8x7b-instruct-v0.1-q8_0")
 def format_docs(docs):
     #logger = logging.getLogger(__name__)
     joined_docs = "\n\n".join(doc.page_content for doc in docs)
-    logger.info(f"Joined docs: {joined_docs}")
+    logger.info(f"Joined {len(docs)} docs to one doc of length {len(joined_docs)}")
     return joined_docs
-
 
 rag_chain = (
     {"context": retriever | format_docs, "question": RunnablePassthrough()}
@@ -54,14 +54,17 @@ rag_chain = (
     | StrOutputParser()
 )
 
-#set_debug(True)
+def chat_loop():
+    while True:
+        user_input = input("> ")
+        try: 
+            answer = rag_chain.invoke({"question": user_input},  {
+                                    "callbacks": [handler]})
+            print( answer)
+        except Exception as e:
+            logger.error(f"Error: {e}")
+        #print("\n Assistant :", ai_msg["answer"])
 
-while True:
-    user_input = input("> ")
-    try: 
-        answer = rag_chain.invoke({"question": user_input})
-        print( answer)
-    except Exception as e:
-        logger.error(f"Error: {e}")
-    #print("\n Assistant :", ai_msg["answer"])
 
+if __name__ == '__main__':
+    chat_loop()

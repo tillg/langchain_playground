@@ -22,7 +22,7 @@ import os
 from vectorestore_factory import get_vectorestore, get_vectorestore_config
 
 
-VECTORESTORE_NAME = "a12_small"
+VECTORESTORE_NAME = "a12_large_mxbai"
 
 vectorstore_config = get_vectorestore_config(VECTORESTORE_NAME)
 if vectorstore_config is None:

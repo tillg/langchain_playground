@@ -3,9 +3,9 @@
 Playing around with [langchain](https://www.langchain.com).
 
 
-# Dev Setup
+# Dev Setup & Running
 
-I use a couple of windows with a standard command:
+I use a couple of windows with a standard command (this all assumes you are in the project folder):
 
 ```bash
 # Follow the application log 
@@ -15,11 +15,14 @@ less +F data/logs/app.log
 less +F ~/.ollama/logs/server.log
 ```
 
+To run a script I use the module syntax: `python -m rag.simple_chat`.
+
 # History
 
 ## 2024-04-20 Configurable vectorestores
 * Vectorestores are now in config file
 * Config of a configuration contains also the model and the directory with the data to ingest
+* Use a 
 
 ## 2024-04-20 Debugging LangChain chains
 * Direct logging into a file so it doesn't interfere with my dialog in the terminal.
@@ -41,6 +44,7 @@ less +F ~/.ollama/logs/server.log
 
 ## Tech reading
 
+* Which model to use for local embeddings with Ollama? [In this blog entry (April 8, 2024)](https://ollama.com/blog/embedding-models) they give an overview.
 * For having iTerm layouts with commands so I get back my screen setup: [iTomate](https://github.com/kamranahmedse/itomate)
 * For a later version: [Building a Confluence Q&A App with LangChain and ChatGPT](https://www.shakudo.io/blog/building-confluence-kb-qanda-app-langchain-chatgpt). Hint: There is a [ConfluenceLoader](https://api.python.langchain.com/en/latest/document_loaders/langchain_community.document_loaders.confluence.ConfluenceLoader.html) in LangChain!!
 * While looking for a fast embedding model: [Local Embedding done right - Medium](https://medium.com/@alekseyrubtsov/local-embedding-done-right-5a8bf129ec42)
